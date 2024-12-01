@@ -34,7 +34,7 @@ client = OpenAI(api_key=openai_api_key)
 
 # Let the user upload a file via `st.file_uploader`.
 uploaded_file = st.file_uploader(
-    "Upload a document (.txt or .md or .pdf)", type=("txt", "md", "pdf")
+    "Upload a document (.pdf)", type=("pdf")
 )
 
 
