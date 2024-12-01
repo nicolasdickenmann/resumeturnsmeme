@@ -68,6 +68,7 @@ if uploaded_file is not None:
         "as a whole and ridicule his resume so far and smartly ridicule hypocrisy. "
         "In the following is his parsed resume in a json format, use all information available. It "
         "is very important that you first fully imagine the person and then create the meme. "
+        "Create a contemporary meme and not just a drawing of the person, it should be abstract. "
         "His parsed resume: "
         + resume_data  # Append the formatted resume to the prompt
     )
