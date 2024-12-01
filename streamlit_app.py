@@ -1,4 +1,5 @@
 import streamlit as st
+import openai
 from openai import OpenAI
 import spacy
 import nltk
@@ -24,21 +25,11 @@ st.markdown(
     "Upload your resume below and we will get cooking right away!"
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.secrets["api_key"]
-
-# Create an OpenAI client.
-client = OpenAI(api_key=openai_api_key)
 
 # Let the user upload a file via `st.file_uploader`.
 uploaded_file = st.file_uploader(
     "Upload a document (.pdf)", type=("pdf")
 )
-
-
-
 if uploaded_file is not None:
     import tempfile
     from pydparser import ResumeParser
@@ -83,23 +74,66 @@ if uploaded_file is not None:
     #st.write(prompt)
 
 
-    # Generate an answer using the OpenAI API.
-    response = client.images.generate(
-    model="dall-e-3",
-    prompt=prompt,
-    size="1024x1024",
-    quality="standard",
-    n=1,
-    )
-    image_url = response.data[0].url
+    # Ask user for their OpenAI API key via `st.text_input`.
+    # Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
+    # via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
+    def try_generate_image(api_key, prompt):
+        try:
+            # Create an OpenAI client using the provided API key
+            client = OpenAI(api_key=api_key)
+            
+            # Attempt to generate an image
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size="1024x1024",
+                quality="standard",
+                n=1,
+            )
+            return response
+        except openai.AuthenticationError as e:
+            # Return the exception as a string so we can handle it
+            return str(e)
 
-        # Fetch the image
-    response = requests.get(image_url)
-    if response.status_code == 200:
-        # Open the image from the response content
-        img = Image.open(BytesIO(response.content))
-        
-        # Display the image in Streamlit
-        st.image(img, caption="Academic weapon", use_container_width =True)
+    # Get the secret key from Streamlit secrets
+    openai_api_key = st.secrets.get("api_key")
+
+    # First try with the secret API key
+    response = try_generate_image(openai_api_key, prompt)
+
+    # Check if the API key failed
+    if isinstance(response, str):  # If error message is returned
+        user_api_key = st.text_input("OpenAI API Key", type="password")
+        if not user_api_key:
+            st.info("Please add your OpenAI API key to continue.", icon="🗝️")
+        else:
+            # Try generating the image with the user's API key
+            response_second_try = try_generate_image(user_api_key, prompt)
+            if isinstance(response_second_try, str):  # If there's still an error with the user's key
+                st.error(f"Error with your API key: {response_second_try}")
+            else:
+                # If successful, display the image
+                image_url = response_second_try.data[0].url
+                        # Fetch the image
+                response = requests.get(image_url)
+                if response.status_code == 200:
+                    # Open the image from the response content
+                    img = Image.open(BytesIO(response.content))
+                    
+                    # Display the image in Streamlit
+                    st.image(img, caption="Academic weapon", use_container_width =True)
+                else:
+                    st.error("Failed to fetch the image.")
     else:
-        st.error("Failed to fetch the image.")
+        # If the secret key worked, display the image
+        image_url = response.data[0].url
+        # Fetch the image
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            # Open the image from the response content
+            img = Image.open(BytesIO(response.content))
+            
+            # Display the image in Streamlit
+            st.image(img, caption="Academic weapon", use_container_width =True)
+        else:
+            st.error("Failed to fetch the image.")
