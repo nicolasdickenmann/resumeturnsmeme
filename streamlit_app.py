@@ -21,8 +21,7 @@ except:
 # Show title and description.
 st.title("🧠 Turn your resume into pure brainrot")
 st.markdown(
-    "Upload your resume below and we will get cooking right away!  \n"
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
+    "Upload your resume below and we will get cooking right away!"
 )
 
 # Ask user for their OpenAI API key via `st.text_input`.
